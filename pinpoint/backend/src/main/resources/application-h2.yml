@@ -1,0 +1,12 @@
+spring:
+  # 로컬 개발: H2 인메모리 DB. --spring.profiles.active=h2 로 실행하면 적용된다.
+  datasource:
+    url: jdbc:h2:mem:pinpoint;DB_CLOSE_DELAY=-1
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
