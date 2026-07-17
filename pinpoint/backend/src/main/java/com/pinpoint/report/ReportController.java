@@ -2,6 +2,7 @@ package com.pinpoint.report;
 
 import com.pinpoint.domain.subscription.Subscription;
 import com.pinpoint.domain.subscription.UsageType;
+import com.pinpoint.plan.PlanService;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -22,9 +23,11 @@ import java.util.List;
 public class ReportController {
 
     private final ReportService reportService;
+    private final PlanService planService;
 
-    public ReportController(ReportService reportService) {
+    public ReportController(ReportService reportService, PlanService planService) {
         this.reportService = reportService;
+        this.planService = planService;
     }
 
     @GetMapping("/csv")
@@ -34,6 +37,7 @@ public class ReportController {
             @RequestParam(required = false) LocalDate from,
             @RequestParam(required = false) LocalDate to
     ) {
+        planService.requirePro(principal.getUsername());
         List<Subscription> subscriptions = reportService.getSubscriptions(principal.getUsername(), usageType, from, to);
         byte[] csv = reportService.toCsv(subscriptions);
         return fileResponse(csv, "subscriptions-report.csv", "text/csv; charset=UTF-8");
@@ -46,6 +50,7 @@ public class ReportController {
             @RequestParam(required = false) LocalDate from,
             @RequestParam(required = false) LocalDate to
     ) {
+        planService.requirePro(principal.getUsername());
         List<Subscription> subscriptions = reportService.getSubscriptions(principal.getUsername(), usageType, from, to);
         byte[] pdf = reportService.toPdf(subscriptions, principal.getUsername());
         return fileResponse(pdf, "subscriptions-report.pdf", "application/pdf");

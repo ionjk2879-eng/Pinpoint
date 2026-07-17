@@ -21,6 +21,10 @@ spring:
 server:
   port: 8080
 
+# 리포트 다운로드를 PRO 플랜으로 제한할지 여부. 결제 UI가 아직 없으면 false로 두고 개발을 이어간다.
+feature:
+  report-plan-restriction-enabled: false
+
 jwt:
   secret: "change-this-secret-key-before-production-32bytes-minimum"
   access-token-expiration-ms: 3600000      # 1시간

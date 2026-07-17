@@ -3,6 +3,7 @@ import { isAxiosError } from 'axios';
 import { fetchSubscriptions, createSubscription, deleteSubscription } from '../api/subscriptions';
 import { downloadCsvReport, downloadPdfReport } from '../api/reports';
 import { suggestCategory } from '../api/suggestion';
+import { fetchMyPlan, upgradeToPro, type Plan } from '../api/plan';
 import ChartsSection from '../components/ChartsSection';
 import type { Subscription, BillingCycle, UsageType } from '../types';
 import { useAuth } from '../context/AuthContext';
@@ -34,6 +35,9 @@ export default function DashboardPage() {
   const [downloading, setDownloading] = useState<'csv' | 'pdf' | null>(null);
   const [chartsRefreshKey, setChartsRefreshKey] = useState(0);
 
+  const [plan, setPlan] = useState<Plan | null>(null);
+  const [upgrading, setUpgrading] = useState(false);
+
   const load = async () => {
     const data = await fetchSubscriptions();
     setSubscriptions(data);
@@ -42,7 +46,21 @@ export default function DashboardPage() {
 
   useEffect(() => {
     load();
+    fetchMyPlan().then(setPlan).catch(() => setPlan(null));
   }, []);
+
+  const handleUpgrade = async () => {
+    setErrorMessage(null);
+    setUpgrading(true);
+    try {
+      const updated = await upgradeToPro();
+      setPlan(updated);
+    } catch (err) {
+      setErrorMessage(getErrorMessage(err, 'PRO 업그레이드에 실패했습니다.'));
+    } finally {
+      setUpgrading(false);
+    }
+  };
 
   // 서비스명을 입력하면 0.5초 뒤 사전에서 업무/개인 분류 + 계정과목을 추천받는다.
   useEffect(() => {
@@ -131,6 +149,37 @@ export default function DashboardPage() {
         <h1>{nickname}님의 구독 목록</h1>
         <button onClick={handleLogout}>로그아웃</button>
       </div>
+
+      {plan && (
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            border: '1px solid #ddd',
+            borderRadius: 8,
+            padding: '10px 16px',
+            margin: '12px 0',
+            background: plan.isPro ? '#eff6ff' : '#fafafa',
+          }}
+        >
+          <div>
+            <strong style={{ color: plan.isPro ? '#2563eb' : '#555' }}>
+              {plan.isPro ? 'PRO 플랜' : 'FREE 플랜'}
+            </strong>
+            {plan.isPro && plan.expiresAt && (
+              <span style={{ marginLeft: 8, fontSize: 13, color: '#777' }}>
+                {new Date(plan.expiresAt).toLocaleDateString()}까지
+              </span>
+            )}
+          </div>
+          {!plan.isPro && (
+            <button onClick={handleUpgrade} disabled={upgrading}>
+              {upgrading ? '업그레이드 중...' : 'PRO로 업그레이드'}
+            </button>
+          )}
+        </div>
+      )}
 
       <p style={{ color: '#555' }}>업무용 구독료 합계 (월 환산 기준): {businessTotal.toLocaleString()}원</p>
 
